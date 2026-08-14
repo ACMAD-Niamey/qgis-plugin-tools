@@ -5,7 +5,7 @@ import os
 import re
 import shutil
 import tempfile
-from typing import Optional
+from typing import List, Optional
 
 from qgis.core import (
     Qgis,
@@ -16,8 +16,9 @@ from qgis.core import (
 )
 from qgis.gui import QgsMapLayerComboBox
 from qgis.PyQt import uic
-from qgis.PyQt.QtCore import QDate, QVariant
+from qgis.PyQt.QtCore import QDate
 from qgis.PyQt.QtWidgets import (
+    QComboBox,
     QDialog,
     QFileDialog,
     QHBoxLayout,
@@ -50,6 +51,11 @@ FORECAST_PERIOD_CODES = [
     "JAS", "ASO", "SON", "OND", "NDJ", "DJF",
 ]
 
+# First entry in categoryFieldCombo when it's populated -- not a real field
+# name, just a prompt. Validation treats currentIndex() <= 0 as "nothing
+# chosen yet" so this always occupies index 0.
+CATEGORY_FIELD_PLACEHOLDER = "-- Select column --"
+
 
 class ForecastUploadDialog(QDialog, FORM_CLASS):
     """Non-modal dialog for uploading a drought forecast shapefile."""
@@ -67,6 +73,15 @@ class ForecastUploadDialog(QDialog, FORM_CLASS):
         # directory is on disk and still needs cleaning up (mirrors how
         # NetworkClient tracks/cleans its own zip temp dir).
         self._layer_export_dir: Optional[str] = None
+
+        # Attribute field names detected on the currently-selected source
+        # (file or loaded layer), and whether FCST_CAT_FIELD is among them.
+        # Updated by _update_category_field_options() whenever the source
+        # selection or the underlying file/layer changes; consulted by
+        # _validate_form() and on_upload_clicked() so the "which column
+        # holds the forecast category" decision is made in one place.
+        self._current_field_names: List[str] = []
+        self._fcst_cat_present: bool = True
 
         self._init_source_widgets()
         self._init_widgets()
@@ -108,20 +123,34 @@ class ForecastUploadDialog(QDialog, FORM_CLASS):
         self.layerCombo.setFilters(QgsMapLayerProxyModel.PolygonLayer)
         self.layerCombo.setVisible(False)
 
+        # Shown only when the selected source's fields don't include
+        # FCST_CAT_FIELD -- see _update_category_field_options(). Plain
+        # QComboBox (not a QGIS-specific widget) since it just lists
+        # detected field-name strings.
+        self.categoryFieldLabel = QLabel("Forecast category field:")
+        self.categoryFieldLabel.setVisible(False)
+        self.categoryFieldCombo = QComboBox()
+        self.categoryFieldCombo.setVisible(False)
+
         # shapefileGroupLayout is the QVBoxLayout named in
         # upload_dialog_base.ui that currently holds (in order):
         #   [0] shapefilePickerLayout (QHBoxLayout: shpLineEdit + browseButton)
         #   [1] crsWarningLabel
         # We insert the new source-toggle row and "no layers" notice above
-        # the file picker, and the layer combo directly below it, giving:
+        # the file picker, the layer combo directly below it, and the
+        # category-field label/combo at the very end, giving:
         #   [0] source_radio_layout (new)
         #   [1] noPolygonLayersLabel (new)
         #   [2] shapefilePickerLayout (existing)
         #   [3] layerCombo (new)
         #   [4] crsWarningLabel (existing, shifted down)
+        #   [5] categoryFieldLabel (new)
+        #   [6] categoryFieldCombo (new)
         self.shapefileGroupLayout.insertLayout(0, source_radio_layout)
         self.shapefileGroupLayout.insertWidget(1, self.noPolygonLayersLabel)
         self.shapefileGroupLayout.insertWidget(3, self.layerCombo)
+        self.shapefileGroupLayout.addWidget(self.categoryFieldLabel)
+        self.shapefileGroupLayout.addWidget(self.categoryFieldCombo)
 
     def _init_widgets(self) -> None:
         self.forecastPeriodCombo.clear()
@@ -146,7 +175,7 @@ class ForecastUploadDialog(QDialog, FORM_CLASS):
         self.cancelButton.clicked.connect(self.on_cancel_clicked)
 
         self.sourceFileRadio.toggled.connect(self._on_source_toggled)
-        self.layerCombo.layerChanged.connect(lambda _layer: self._hide_validation_error())
+        self.layerCombo.layerChanged.connect(self._on_layer_combo_changed)
 
     # -- Source toggle (file on disk vs. loaded layer) -----------------
 
@@ -167,9 +196,63 @@ class ForecastUploadDialog(QDialog, FORM_CLASS):
         self._hide_validation_error()
         if is_file:
             self._update_shapefile_checks()
+            field_names = (
+                shapefile_utils.get_shapefile_field_names(self._shp_path)
+                if self._shp_path
+                else []
+            )
         else:
             self.crsWarningLabel.setVisible(False)
             self.crsWarningLabel.setText("")
+            layer = self.layerCombo.currentLayer()
+            field_names = [] if layer is None else [f.name() for f in layer.fields()]
+
+        # Re-derive for whichever source is now active -- otherwise the
+        # category-field dropdown would keep showing state left over from
+        # the previously active source (e.g. a file's fields while "Loaded
+        # layer" is now selected).
+        self._update_category_field_options(field_names)
+
+    def _on_layer_combo_changed(self, layer) -> None:
+        """Update field-based UI whenever the selected loaded layer changes.
+
+        QgsMapLayerComboBox tracks the project's layers regardless of its
+        own visibility, so layerChanged can fire while "File on disk" is
+        the active source -- guard on sourceLayerRadio so it doesn't
+        clobber the file-derived field state in that case.
+        """
+        self._hide_validation_error()
+        if not self.sourceLayerRadio.isChecked():
+            return
+        field_names = [] if layer is None else [f.name() for f in layer.fields()]
+        self._update_category_field_options(field_names)
+
+    def _update_category_field_options(self, field_names: List[str]) -> None:
+        """Show/hide + populate the "Forecast category field" dropdown.
+
+        Called whenever the active source's attribute fields might have
+        changed (file browsed, layer combo changed, source toggled). When
+        FCST_CAT_FIELD is present we behave exactly as before this feature
+        existed -- no extra UI, nothing extra sent beyond the default. When
+        it's absent, the user must explicitly pick a column, so the combo
+        is always reset to the placeholder (index 0) rather than trying to
+        carry a selection over from a different shapefile/layer.
+        """
+        self._current_field_names = field_names
+        self._fcst_cat_present = FCST_CAT_FIELD in field_names
+
+        if self._fcst_cat_present:
+            self.categoryFieldLabel.setVisible(False)
+            self.categoryFieldCombo.setVisible(False)
+            self.categoryFieldCombo.clear()
+            return
+
+        self.categoryFieldLabel.setVisible(True)
+        self.categoryFieldCombo.setVisible(True)
+        self.categoryFieldCombo.clear()
+        self.categoryFieldCombo.addItem(CATEGORY_FIELD_PLACEHOLDER)
+        self.categoryFieldCombo.addItems(field_names)
+        self.categoryFieldCombo.setCurrentIndex(0)
 
     def _refresh_layer_source_availability(self) -> None:
         """Disable the "Loaded layer" option when no polygon layers exist.
@@ -203,6 +286,7 @@ class ForecastUploadDialog(QDialog, FORM_CLASS):
         self.shpLineEdit.setText(path)
         self._hide_validation_error()
         self._update_shapefile_checks()
+        self._update_category_field_options(shapefile_utils.get_shapefile_field_names(path))
 
     def _update_shapefile_checks(self) -> None:
         """Warn (inline, non-blocking) about missing sidecars or a non-4326 CRS."""
@@ -255,20 +339,6 @@ class ForecastUploadDialog(QDialog, FORM_CLASS):
             layer = self.layerCombo.currentLayer()
             if layer is None:
                 return False, "Select a loaded polygon layer to upload."
-
-            field_names = [field.name() for field in layer.fields()]
-            if FCST_CAT_FIELD not in field_names:
-                return False, (
-                    f"Selected layer must have an integer field named "
-                    f"'{FCST_CAT_FIELD}' (forecast category code)."
-                )
-
-            fcst_cat_field = layer.fields().at(field_names.index(FCST_CAT_FIELD))
-            if fcst_cat_field.type() not in (QVariant.Int, QVariant.LongLong):
-                return False, (
-                    f"The '{FCST_CAT_FIELD}' field on the selected layer must be an "
-                    f"integer type (found {fcst_cat_field.typeName()})."
-                )
         else:
             if not self._shp_path or not os.path.isfile(self._shp_path):
                 return False, "Select a shapefile (.shp) to upload."
@@ -278,6 +348,18 @@ class ForecastUploadDialog(QDialog, FORM_CLASS):
                 return False, (
                     "Shapefile is missing required companion file(s): " + ", ".join(missing)
                 )
+
+        # Forecast category column: shared across both source branches
+        # above. If fcst_cat wasn't detected, the user must explicitly
+        # pick a column via categoryFieldCombo -- see
+        # _update_category_field_options().
+        if not self._fcst_cat_present:
+            if not self._current_field_names:
+                return False, (
+                    "Could not read attribute fields from the selected shapefile/layer."
+                )
+            if self.categoryFieldCombo.currentIndex() <= 0:
+                return False, "Select which attribute column holds the forecast category code."
 
         if not self.forecastPeriodCombo.currentText():
             return False, "Select a forecast period."
@@ -403,6 +485,9 @@ class ForecastUploadDialog(QDialog, FORM_CLASS):
             "year": str(self.yearSpinBox.value()),
             "cleanup": "true" if self.cleanupCheckBox.isChecked() else "false",
             "update_latest": "true" if self.updateLatestCheckBox.isChecked() else "false",
+            "forecast_category_code_column": (
+                FCST_CAT_FIELD if self._fcst_cat_present else self.categoryFieldCombo.currentText()
+            ),
         }
 
         self._set_busy(True)
@@ -479,6 +564,7 @@ class ForecastUploadDialog(QDialog, FORM_CLASS):
             self.sourceFileRadio,
             self.sourceLayerRadio,
             self.layerCombo,
+            self.categoryFieldCombo,
             self.forecastPeriodCombo,
             self.forecastLeadNameEdit,
             self.dateProducedEdit,
@@ -497,3 +583,9 @@ class ForecastUploadDialog(QDialog, FORM_CLASS):
         self.crsWarningLabel.setText("")
         self.forecastLeadNameEdit.clear()
         self._hide_validation_error()
+
+        self.categoryFieldLabel.setVisible(False)
+        self.categoryFieldCombo.setVisible(False)
+        self.categoryFieldCombo.clear()
+        self._current_field_names = []
+        self._fcst_cat_present = True

@@ -111,6 +111,31 @@ def check_crs_is_wgs84(prj_path: Optional[str]) -> Tuple[bool, Optional[str], Op
     return is_wgs84, (authid or None), None
 
 
+def get_shapefile_field_names(shp_path: str) -> List[str]:
+    """Return the attribute field names of a shapefile on disk.
+
+    Opens the shapefile via the OGR provider purely to read its field
+    schema -- the QgsVectorLayer created here is never added to the
+    project/canvas, just built, inspected, and left to be garbage
+    collected. Used to detect whether a `fcst_cat` field is present
+    before falling back to letting the user pick a column themselves.
+
+    Returns:
+        Field names in layer order, or [] if the file can't be opened as
+        a valid vector layer (missing sidecars, corrupt file, etc.) --
+        callers treat an empty list as "couldn't introspect", not as "a
+        shapefile with zero fields".
+    """
+    # Imported lazily, same rationale as check_crs_is_wgs84 above: keeps
+    # this module importable without a QGIS/QApplication environment.
+    from qgis.core import QgsVectorLayer
+
+    layer = QgsVectorLayer(shp_path, "field_probe", "ogr")
+    if not layer.isValid():
+        return []
+    return [field.name() for field in layer.fields()]
+
+
 def zip_shapefile(shp_path: str, dest_dir: Optional[str] = None) -> Tuple[str, str]:
     """Zip the .shp and its sidecar files into a single archive.
 

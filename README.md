@@ -117,12 +117,17 @@ base URL/token rather than prompting for their own.
    source:
    - **File on disk** (default): **Browse...** to pick the `.shp` file.
    - **Loaded layer**: pick a polygon layer already loaded in the current
-     QGIS project from the layer dropdown. The layer must have an
-     integer field named exactly `fcst_cat` (the forecast category
-     code); the option is disabled if the project has no polygon
-     layers. Loaded-layer input is exported to a temporary shapefile and
-     automatically reprojected to EPSG:4326 on export, so the CRS
-     warning below never applies to this path.
+     QGIS project from the layer dropdown; the option is disabled if the
+     project has no polygon layers. Loaded-layer input is exported to a
+     temporary shapefile and automatically reprojected to EPSG:4326 on
+     export, so the CRS warning below never applies to this path.
+
+   Ideally the shapefile/layer has an attribute field named exactly
+   `fcst_cat` (the forecast category code) -- if it does, nothing further
+   is needed. If it doesn't, a **Forecast category field** dropdown
+   appears listing the available attribute columns and you must pick one
+   before **Upload** is enabled; the chosen column name is sent to the
+   backend as `forecast_category_code_column`.
 
    Then choose the **Forecast period**, enter a **Forecast lead name**,
    confirm/adjust **Date produced** and **Year**, and leave **Cleanup**

@@ -13,6 +13,7 @@ resources_rc.py
 
 # Build artifacts
 *.zip
+dist/
 
 # Editors / OS
 .vscode/

@@ -10,9 +10,9 @@ email=support@acmad-niamey.example.org
 # Tags are comma separated with spaces allowed
 tags=drought,forecast,acmad,upload,shapefile,rest api,seasonal forecast,toolbox
 
-homepage=https://github.com/ACMAD-Niamey/qgis-forecast-ingest-plugin
-tracker=https://github.com/ACMAD-Niamey/qgis-forecast-ingest-plugin/issues
-repository=https://github.com/ACMAD-Niamey/qgis-forecast-ingest-plugin
+homepage=https://github.com/ACMAD-Niamey/qgis-plugin-tools
+tracker=https://github.com/ACMAD-Niamey/qgis-plugin-tools/issues
+repository=https://github.com/ACMAD-Niamey/qgis-plugin-tools
 
 category=Web
 experimental=True

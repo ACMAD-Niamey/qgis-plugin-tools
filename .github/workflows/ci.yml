@@ -1,0 +1,45 @@
+name: CI
+
+# Fast, cheap validation on every push/PR to main. This deliberately does
+# NOT exercise any PyQGIS/PyQt5 runtime behaviour -- there is no QGIS
+# available in a plain ubuntu-latest runner, and that limitation is already
+# documented in README.md's "Known limitations" section. This workflow only
+# catches syntax/import errors and packaging breakage, mirroring the manual
+# checks already used while building this plugin.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Check Python syntax/import validity
+        run: |
+          find acmad_tools -name '*.py' -print0 \
+            | xargs -0 -n1 python3 -m py_compile
+
+      - name: Validate .ui files are well-formed XML
+        run: |
+          find acmad_tools -name '*.ui' -print0 \
+            | xargs -0 -n1 python3 -c '
+          import sys
+          import xml.dom.minidom as minidom
+
+          path = sys.argv[1]
+          minidom.parse(path)
+          print(f"OK: {path}")
+          '
+
+      - name: Smoke-test packaging script
+        run: ./scripts/package.sh

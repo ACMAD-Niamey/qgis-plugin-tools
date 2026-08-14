@@ -48,10 +48,17 @@ this first version.
 
 ## Installation
 
-1. Zip the `acmad_tools/` folder itself (the zip's top-level entry must
-   be the `acmad_tools` directory -- e.g. from this repo root:
-   `cd acmad_tools && zip -r ../acmad_tools.zip . -x '.*'`, or just zip
-   the folder in Finder/Explorer).
+1. Build an installable zip by running `./scripts/package.sh` from the
+   repo root -- it produces `dist/acmad_tools-<version>.zip` with the
+   `acmad_tools/` directory as the zip's top-level entry (required for
+   QGIS's "Install from ZIP" to work). This is the same script the release
+   workflow uses, so a locally built zip matches exactly what a GitHub
+   Release ships.
+
+   If you'd rather not run the script, zipping the folder manually works
+   too (the zip's top-level entry must still be the `acmad_tools`
+   directory): `cd acmad_tools && zip -r ../acmad_tools.zip . -x '.*'`, or
+   just zip the folder in Finder/Explorer.
 2. In QGIS: **Plugins -> Manage and Install Plugins... -> Install from
    ZIP**, select the zip file, click **Install Plugin**.
 3. Enable the plugin if it isn't auto-enabled (**Plugins -> Manage and
@@ -59,6 +66,26 @@ this first version.
 4. A shared "ACMAD Tools" toolbar and a **Plugins -> ACMAD Tools** menu
    appear, with one entry per available tool (currently just "Upload
    Forecast to ACMAD...").
+
+## Releasing
+
+- **CI** (`.github/workflows/ci.yml`) runs automatically on every push and
+  pull request targeting `main`. It's a fast, cheap safety net: Python
+  syntax/import validity across `acmad_tools/`, `.ui` file XML
+  well-formedness, and a smoke test that `scripts/package.sh` runs
+  cleanly. It does **not** exercise any PyQGIS/PyQt5 runtime behaviour --
+  see "Known limitations" below.
+- **To cut a release**: bump `version=` in `acmad_tools/metadata.txt`,
+  commit, tag that commit `vX.Y.Z` matching the new version exactly (e.g.
+  `v0.1.1`), and push the tag. The release workflow
+  (`.github/workflows/release.yml`) then verifies the tag matches
+  `metadata.txt`, builds the zip via `scripts/package.sh`, and publishes a
+  GitHub Release with the zip attached and auto-generated release notes.
+- **Manual/local packaging without releasing**: run `./scripts/package.sh`
+  any time to produce the same zip locally -- useful for testing an
+  install before cutting a real release. The release workflow can also be
+  triggered manually (`workflow_dispatch`, no tag needed) to build and
+  upload a sanity-check zip as a workflow artifact.
 
 ## Getting an API token
 

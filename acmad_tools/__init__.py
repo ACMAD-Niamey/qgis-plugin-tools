@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""ACMAD Forecast Ingest -- QGIS plugin entry point.
+"""ACMAD Tools -- QGIS plugin entry point.
 
 This file must stay minimal: QGIS imports it purely to call
 ``classFactory()`` before the plugin's dependencies (PyQt, qgis.core, ...)
@@ -17,9 +17,9 @@ def classFactory(iface):  # noqa: N802 -- QGIS requires this exact name/case
         iface: A ``QgisInterface`` instance, provided by QGIS at load time.
 
     Returns:
-        AcmadForecastIngestPlugin: The plugin instance QGIS will drive via
+        AcmadToolsPlugin: The plugin instance QGIS will drive via
         ``initGui()`` / ``unload()``.
     """
-    from .acmad_forecast_ingest import AcmadForecastIngestPlugin
+    from .acmad_tools_plugin import AcmadToolsPlugin
 
-    return AcmadForecastIngestPlugin(iface)
+    return AcmadToolsPlugin(iface)

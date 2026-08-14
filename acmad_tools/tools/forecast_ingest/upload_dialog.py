@@ -9,10 +9,10 @@ from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QDate
 from qgis.PyQt.QtWidgets import QDialog, QFileDialog, QMessageBox
 
+from ...core.settings_manager import SettingsManager
 from . import shapefile_utils
 from .network_client import NetworkClient
 from .settings_dialog import SettingsDialog
-from .settings_manager import SettingsManager
 
 UI_PATH = os.path.join(os.path.dirname(__file__), "upload_dialog_base.ui")
 FORM_CLASS, _ = uic.loadUiType(UI_PATH)

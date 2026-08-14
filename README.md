@@ -1,13 +1,20 @@
-# ACMAD Forecast Ingest -- QGIS plugin
+# ACMAD Tools -- QGIS plugin
 
-A QGIS 3.x plugin that lets a domain expert upload a drought forecast
-polygon shapefile directly from QGIS to the ACMAD Drought Advisory
-backend's REST API, instead of a manual out-of-band upload process.
+A small, extensible toolbox of QGIS 3.x plugins for ACMAD backend
+workflows. Each tool lives in its own subpackage under `tools/` and shares
+a common "ACMAD Tools" toolbar/menu and backend connection settings
+(server base URL + API token), so future tools can be added without
+duplicating that plumbing.
 
-The plugin code lives in the [`acmad_forecast_ingest/`](./acmad_forecast_ingest)
+The first (and currently only) tool is **Forecast Ingest**: it lets a
+domain expert upload a drought forecast polygon shapefile directly from
+QGIS to the ACMAD Drought Advisory backend's REST API, instead of a
+manual out-of-band upload process.
+
+The plugin code lives in the [`acmad_tools/`](./acmad_tools)
 directory -- that directory *is* the installable QGIS plugin.
 
-## What it does
+## What the Forecast Ingest tool does
 
 1. You pick a `.shp` file from disk (its `.shx`/`.dbf`/`.prj`/`.cpg`
    sidecar files must be alongside it).
@@ -37,16 +44,17 @@ for this first version.
 
 ## Installation
 
-1. Zip the `acmad_forecast_ingest/` folder itself (the zip's top-level
-   entry must be the `acmad_forecast_ingest` directory -- e.g. from this
-   repo root: `cd acmad_forecast_ingest && zip -r ../acmad_forecast_ingest.zip . -x '.*'`,
-   or just zip the folder in Finder/Explorer).
+1. Zip the `acmad_tools/` folder itself (the zip's top-level entry must
+   be the `acmad_tools` directory -- e.g. from this repo root:
+   `cd acmad_tools && zip -r ../acmad_tools.zip . -x '.*'`, or just zip
+   the folder in Finder/Explorer).
 2. In QGIS: **Plugins -> Manage and Install Plugins... -> Install from
    ZIP**, select the zip file, click **Install Plugin**.
 3. Enable the plugin if it isn't auto-enabled (**Plugins -> Manage and
-   Install Plugins... -> Installed**, check "ACMAD Forecast Ingest").
-4. A toolbar icon and a **Plugins -> ACMAD Forecast Ingest** menu entry
-   ("Upload Forecast to ACMAD...") appear.
+   Install Plugins... -> Installed**, check "ACMAD Tools").
+4. A shared "ACMAD Tools" toolbar and a **Plugins -> ACMAD Tools** menu
+   appear, with one entry per available tool (currently just "Upload
+   Forecast to ACMAD...").
 
 ## Getting an API token
 
@@ -60,12 +68,15 @@ python manage.py default_api_token_generation <username>
 
 Paste that token into the plugin's Settings dialog (see below) -- it is
 stored locally via QGIS's `QSettings` (organisation `ACMAD`, application
-`ForecastIngestPlugin`) and reused for every upload.
+`ForecastIngestPlugin`) and reused for every upload. This settings store
+is shared infrastructure (`acmad_tools/core/settings_manager.py`): future
+tools that also talk to the ACMAD backend are expected to reuse the same
+base URL/token rather than prompting for their own.
 
-## Using the plugin
+## Using the Forecast Ingest tool
 
-1. Click the toolbar icon (or **Plugins -> ACMAD Forecast Ingest ->
-   Upload Forecast to ACMAD...**).
+1. Click the toolbar icon (or **Plugins -> ACMAD Tools -> Upload Forecast
+   to ACMAD...**).
 2. Click **Settings...** (first time only, or whenever the server URL /
    token changes): enter the server base URL (e.g.
    `https://acmad-drought.example.org`, no trailing slash needed) and the
@@ -86,18 +97,60 @@ stored locally via QGIS's `QSettings` (organisation `ACMAD`, application
 qgis-pugin/
 ├── README.md
 ├── .gitignore
-└── acmad_forecast_ingest/        <- the installable plugin (zip this folder)
-    ├── __init__.py                classFactory() entry point
-    ├── metadata.txt                plugin metadata (name, version, ...)
-    ├── acmad_forecast_ingest.py    initGui()/unload()/toolbar+menu wiring
-    ├── upload_dialog.py            main upload dialog logic
-    ├── upload_dialog_base.ui       main dialog layout (Qt Designer XML)
-    ├── settings_dialog.py          settings dialog logic (URL/token/test)
-    ├── settings_dialog_base.ui     settings dialog layout (Qt Designer XML)
-    ├── network_client.py           QNetworkAccessManager multipart HTTP client
-    ├── settings_manager.py         QSettings persistence wrapper
-    └── shapefile_utils.py          sidecar lookup, CRS check, zip helper
+└── acmad_tools/                          <- the installable plugin (zip this folder)
+    ├── __init__.py                        classFactory() entry point
+    ├── metadata.txt                       plugin metadata (name, version, ...)
+    ├── acmad_tools_plugin.py              initGui()/unload(): shared toolbar/menu + tool registry
+    ├── core/
+    │   ├── __init__.py
+    │   └── settings_manager.py            QSettings persistence wrapper (shared across tools)
+    └── tools/
+        ├── __init__.py
+        └── forecast_ingest/                the first tool
+            ├── __init__.py
+            ├── tool.py                     ForecastIngestTool: QAction + dialog-opening logic
+            ├── upload_dialog.py            main upload dialog logic
+            ├── upload_dialog_base.ui       main dialog layout (Qt Designer XML)
+            ├── settings_dialog.py          settings dialog logic (URL/token/test)
+            ├── settings_dialog_base.ui     settings dialog layout (Qt Designer XML)
+            ├── network_client.py           QNetworkAccessManager multipart HTTP client
+            └── shapefile_utils.py          sidecar lookup, CRS check, zip helper
 ```
+
+## Adding a new tool
+
+The toolbox has no plugin framework -- just a lightweight registry
+pattern. To add a new tool:
+
+1. Create a new subpackage under `acmad_tools/tools/<your_tool_name>/`
+   with its own `__init__.py` and a `tool.py` module.
+2. In `tool.py`, define a class implementing this small, plain
+   duck-typed interface (no ABC/base class required):
+
+   - `__init__(self, iface)` -- store `iface`; no UI side effects yet.
+   - `name` -- a short display string used for the QAction text/tooltip.
+   - `icon(self)` -- return a `QIcon` (a built-in QGIS theme icon via
+     `QgsApplication.getThemeIcon(...)` is fine until a custom icon
+     exists -- see `forecast_ingest/tool.py` for the pattern).
+   - `initGui(self, menu, toolbar)` -- create your tool's `QAction`(s),
+     connect `triggered` to whatever opens your tool's dialog/behaviour,
+     and add the action to the given shared `menu` (a Plugins-menu name
+     string, passed straight to `iface.addPluginToMenu`) and `toolbar`
+     (the shared `QToolBar` instance). Store the action(s) on `self` so
+     `unload` can remove them.
+   - `unload(self)` -- remove/delete whatever `initGui` added (via
+     `iface.removePluginMenu`/`iface.removeToolBarIcon`, and close any
+     open dialog).
+
+3. Put any dialogs/`.ui` files/network or business logic your tool needs
+   as sibling modules inside the same `tools/<your_tool_name>/`
+   subpackage. Reuse `acmad_tools/core/settings_manager.py` for the
+   backend base URL/API token rather than adding a new settings store,
+   unless your tool genuinely needs different connection settings.
+4. Register it in `acmad_tools/acmad_tools_plugin.py`: import your
+   tool's class and append one line to the `self._tools` list in
+   `AcmadToolsPlugin.__init__`. Nothing else in that file needs to
+   change -- `initGui`/`unload` already loop over every registered tool.
 
 ## Known limitations / things to verify in a real QGIS install
 
@@ -114,3 +167,9 @@ anything exotic -- but the following are worth a first smoke-test:
 - `.ui` files were hand-written as Qt Designer XML (not exported from
   Designer itself). They follow standard `uic.loadUiType` conventions, but
   opening them once in Qt Designer/QGIS is a good sanity check.
+- The `menu` argument passed to each tool's `initGui`/`unload` is a
+  Plugins-menu *name string* (matching the original plugin's use of
+  `iface.addPluginToMenu`/`removePluginMenu`), not a `QMenu` object --
+  worth confirming this still reads/behaves as expected after the
+  restructure, since it is easy to mentally conflate with an actual
+  `QMenu` handle.

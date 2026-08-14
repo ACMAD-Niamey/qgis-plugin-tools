@@ -1,0 +1,26 @@
+[general]
+name=ACMAD Tools
+qgisMinimumVersion=3.16
+description=A growing toolbox of QGIS plugins for ACMAD backend workflows. Currently includes drought forecast polygon shapefile ingestion, with more tools to be added over time.
+about=A small, extensible toolbox plugin: each tool lives in its own subpackage and shares a common toolbar/menu and backend connection settings. The first tool lets a domain expert pick a seasonal drought forecast shapefile (.shp/.shx/.dbf/.prj) from disk, fill in the forecast metadata (period, lead name, date produced, year), and upload it in one click to the ACMAD Drought Advisory backend's forecast ingestion endpoint. The shapefile parts are zipped client-side and posted as multipart/form-data over Qt's own network stack, authenticated with a pre-issued DRF API token stored in QGIS settings. No self-service login: tokens are obtained out-of-band from a backend administrator.
+version=0.1.0
+author=ACMAD
+email=support@acmad-niamey.example.org
+
+# Tags are comma separated with spaces allowed
+tags=drought,forecast,acmad,upload,shapefile,rest api,seasonal forecast,toolbox
+
+homepage=https://github.com/ACMAD-Niamey/qgis-forecast-ingest-plugin
+tracker=https://github.com/ACMAD-Niamey/qgis-forecast-ingest-plugin/issues
+repository=https://github.com/ACMAD-Niamey/qgis-forecast-ingest-plugin
+
+category=Web
+experimental=True
+deprecated=False
+server=False
+
+# No custom icon.png is bundled with this initial version -- the toolbar/menu
+# actions fall back to built-in QGIS theme icons at runtime (see each tool's
+# tools/<name>/tool.py). Deliberately no "icon=" line here so the QGIS
+# Plugin Manager falls back to its own default listing icon instead of
+# pointing at a file that does not exist.

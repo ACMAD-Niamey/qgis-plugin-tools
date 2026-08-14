@@ -6,8 +6,8 @@ import os
 from qgis.PyQt import uic
 from qgis.PyQt.QtWidgets import QDialog
 
+from ...core.settings_manager import SettingsManager
 from .network_client import NetworkClient
-from .settings_manager import SettingsManager
 
 UI_PATH = os.path.join(os.path.dirname(__file__), "settings_dialog_base.ui")
 FORM_CLASS, _ = uic.loadUiType(UI_PATH)

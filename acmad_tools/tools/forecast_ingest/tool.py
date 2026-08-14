@@ -8,8 +8,16 @@ feature plugin class's ``initGui``/``run`` -- moved here unchanged so a
 future tool can follow the same pattern in its own ``tool.py``.
 """
 
+import os
+
 from qgis.core import QgsApplication
+from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
+
+# acmad_tools/tools/forecast_ingest/tool.py -> acmad_tools/icon.png
+_PLUGIN_ICON_PATH = os.path.normpath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "icon.png")
+)
 
 
 class ForecastIngestTool:
@@ -26,14 +34,18 @@ class ForecastIngestTool:
     def icon(self):
         """Return the QIcon used for this tool's QAction.
 
-        No bundled icon.png ships with this initial version of the
-        plugin (no image-generation tooling was available while building
-        it), so we fall back to a built-in QGIS theme icon -- this keeps
-        the toolbar/menu entry visually sensible without a custom asset.
-        "mActionSharingExport.svg" reads reasonably as "send data out";
-        swap for a bundled icon.png + QIcon(icon_path) once a proper
-        plugin icon is designed.
+        Uses the bundled ACMAD logo (``acmad_tools/icon.png``, the same
+        image referenced by ``metadata.txt``'s ``icon=`` field) so the
+        toolbar/menu entry is branded rather than a generic system icon.
+        Falls back to a built-in QGIS theme icon if the bundled file is
+        ever missing or fails to load, so the action never ends up with
+        no icon at all.
         """
+        if os.path.isfile(_PLUGIN_ICON_PATH):
+            icon = QIcon(_PLUGIN_ICON_PATH)
+            if not icon.isNull():
+                return icon
+
         return QgsApplication.getThemeIcon("/mActionSharingExport.svg")
 
     def initGui(self, menu, toolbar) -> None:

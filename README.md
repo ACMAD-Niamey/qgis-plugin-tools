@@ -169,12 +169,15 @@ This plugin was written without access to a running QGIS instance, so it
 follows standard, well-established PyQGIS/PyQt5 patterns rather than
 anything exotic -- but the following are worth a first smoke-test:
 
-- The toolbar/menu icon falls back to the built-in theme icon
-  `mActionSharingExport.svg` (`QgsApplication.getThemeIcon(...)`) since no
-  custom `icon.png` ships yet. If that theme icon name doesn't resolve on
-  your QGIS version, `getThemeIcon` degrades gracefully to a null icon
-  (blank, but the plugin still works) rather than raising -- swap in a
-  real `icon.png` when one exists.
+- The plugin now bundles the official ACMAD logo as `acmad_tools/icon.png`
+  (reused from `DroughtAdvisory/icon/AcmadLogo.png` in the backend repo, so
+  it stays consistent with the rest of the ACMAD stack). `metadata.txt`
+  references it via `icon=icon.png` (shown in the Plugin Manager listing),
+  and each tool's `tool.py` loads the same file via `QIcon(...)` for its
+  toolbar/menu action, falling back to the built-in theme icon
+  `mActionSharingExport.svg` only if the bundled file is ever missing or
+  fails to load. Worth a first-install check that the logo actually
+  renders crisply at toolbar size (source image is 103x95px).
 - `.ui` files were hand-written as Qt Designer XML (not exported from
   Designer itself). They follow standard `uic.loadUiType` conventions, but
   opening them once in Qt Designer/QGIS is a good sanity check.

@@ -19,8 +19,4 @@ experimental=True
 deprecated=False
 server=False
 
-# No custom icon.png is bundled with this initial version -- the toolbar/menu
-# actions fall back to built-in QGIS theme icons at runtime (see each tool's
-# tools/<name>/tool.py). Deliberately no "icon=" line here so the QGIS
-# Plugin Manager falls back to its own default listing icon instead of
-# pointing at a file that does not exist.
+icon=icon.png

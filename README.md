@@ -16,8 +16,11 @@ directory -- that directory *is* the installable QGIS plugin.
 
 ## What the Forecast Ingest tool does
 
-1. You pick a `.shp` file from disk (its `.shx`/`.dbf`/`.prj`/`.cpg`
-   sidecar files must be alongside it).
+1. You pick a forecast polygon shapefile, either as a `.shp` file from
+   disk (its `.shx`/`.dbf`/`.prj`/`.cpg` sidecar files must be alongside
+   it) or as a polygon layer already loaded in the current QGIS project
+   (must have an integer `fcst_cat` field; exported to a temporary
+   shapefile, reprojected to EPSG:4326, before upload).
 2. You fill in the forecast metadata: forecast period (one of the 12
    rolling three-month codes, e.g. `JAS`), a free-text lead name, the date
    the forecast was produced, the reference year, and two flags
@@ -36,11 +39,12 @@ directory -- that directory *is* the installable QGIS plugin.
    `{"status": "success"|"error", "message": "..."}` response is shown via
    the QGIS message bar.
 
-If the shapefile's `.prj` CRS is not `EPSG:4326` (WGS84), the plugin shows
-a non-blocking warning but still allows the upload -- it does **not**
-reproject. Reprojection, exporting directly from a loaded layer, and any
-kind of self-service login/token-issuing flow are explicitly out of scope
-for this first version.
+If a file-on-disk shapefile's `.prj` CRS is not `EPSG:4326` (WGS84), the
+plugin shows a non-blocking warning but still allows the upload -- it does
+**not** reproject that path. Loaded-layer input is always reprojected to
+EPSG:4326 on export, so this warning never applies to it. Any kind of
+self-service login/token-issuing flow remains explicitly out of scope for
+this first version.
 
 ## Installation
 

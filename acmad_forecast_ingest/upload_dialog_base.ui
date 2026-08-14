@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ForecastUploadDialogBase</class>
+ <widget class="QDialog" name="ForecastUploadDialogBase">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>480</width>
+    <height>520</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Upload Forecast to ACMAD</string>
+  </property>
+  <layout class="QVBoxLayout" name="mainLayout">
+   <item>
+    <widget class="QGroupBox" name="shapefileGroupBox">
+     <property name="title">
+      <string>Forecast shapefile</string>
+     </property>
+     <layout class="QVBoxLayout" name="shapefileGroupLayout">
+      <item>
+       <layout class="QHBoxLayout" name="shapefilePickerLayout">
+        <item>
+         <widget class="QLineEdit" name="shpLineEdit">
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+          <property name="placeholderText">
+           <string>No shapefile selected...</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="browseButton">
+          <property name="text">
+           <string>Browse...</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QLabel" name="crsWarningLabel">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+        <property name="visible">
+         <bool>false</bool>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">color: #8a6d00; background-color: #fff3cd; border: 1px solid #ffe69c; padding: 4px; border-radius: 3px;</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="metadataGroupBox">
+     <property name="title">
+      <string>Forecast metadata</string>
+     </property>
+     <layout class="QFormLayout" name="metadataFormLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="forecastPeriodLabel">
+        <property name="text">
+         <string>Forecast period</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QComboBox" name="forecastPeriodCombo"/>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="forecastLeadNameLabel">
+        <property name="text">
+         <string>Forecast lead name</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLineEdit" name="forecastLeadNameEdit">
+        <property name="maxLength">
+         <number>50</number>
+        </property>
+        <property name="placeholderText">
+         <string>e.g. October 2025 update</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="dateProducedLabel">
+        <property name="text">
+         <string>Date produced</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QDateEdit" name="dateProducedEdit">
+        <property name="calendarPopup">
+         <bool>true</bool>
+        </property>
+        <property name="displayFormat">
+         <string>yyyy-MM-dd</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="yearLabel">
+        <property name="text">
+         <string>Year</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QSpinBox" name="yearSpinBox">
+        <property name="minimum">
+         <number>1990</number>
+        </property>
+        <property name="maximum">
+         <number>2100</number>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="QLabel" name="cleanupLabel">
+        <property name="text">
+         <string>Cleanup</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="QCheckBox" name="cleanupCheckBox">
+        <property name="text">
+         <string>Delete previous rows for this period/year before inserting</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="0">
+       <widget class="QLabel" name="updateLatestLabel">
+        <property name="text">
+         <string>Update latest</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="1">
+       <widget class="QCheckBox" name="updateLatestCheckBox">
+        <property name="text">
+         <string>Mark this forecast as the latest available period</string>
+        </property>
+        <property name="checked">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="validationErrorLabel">
+     <property name="text">
+      <string/>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+     <property name="visible">
+      <bool>false</bool>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">color: #c0392b;</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="settingsRowLayout">
+     <item>
+      <widget class="QPushButton" name="settingsButton">
+       <property name="text">
+        <string>Settings...</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="settingsRowSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QProgressBar" name="uploadProgressBar">
+     <property name="minimum">
+      <number>0</number>
+     </property>
+     <property name="maximum">
+      <number>100</number>
+     </property>
+     <property name="value">
+      <number>0</number>
+     </property>
+     <property name="visible">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="actionButtonsLayout">
+     <item>
+      <spacer name="actionButtonsSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="cancelButton">
+       <property name="text">
+        <string>Cancel</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="uploadButton">
+       <property name="text">
+        <string>Upload</string>
+       </property>
+       <property name="default">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+
+# Compiled Qt UI/resources (this plugin ships hand-written .ui files loaded
+# at runtime via uic.loadUi -- no pyuic/pyrcc build artifacts are expected,
+# but ignore them in case a contributor's IDE generates them anyway)
+*.qrc.py
+ui_*.py
+resources_rc.py
+
+# Build artifacts
+*.zip
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+
+# QGIS
+*.qgs~
+*.qgz~

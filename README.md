@@ -82,10 +82,21 @@ base URL/token rather than prompting for their own.
    `https://acmad-drought.example.org`, no trailing slash needed) and the
    API token, then click **Test Connection** to confirm both the URL and
    the token are correct before saving.
-3. Back in the main dialog: **Browse...** to pick the `.shp` file, choose
-   the **Forecast period**, enter a **Forecast lead name**, confirm/adjust
-   **Date produced** and **Year**, and leave **Cleanup** checked unless you
-   specifically want to keep prior rows for the same period/year.
+3. Back in the main dialog, pick the forecast shapefile from either
+   source:
+   - **File on disk** (default): **Browse...** to pick the `.shp` file.
+   - **Loaded layer**: pick a polygon layer already loaded in the current
+     QGIS project from the layer dropdown. The layer must have an
+     integer field named exactly `fcst_cat` (the forecast category
+     code); the option is disabled if the project has no polygon
+     layers. Loaded-layer input is exported to a temporary shapefile and
+     automatically reprojected to EPSG:4326 on export, so the CRS
+     warning below never applies to this path.
+
+   Then choose the **Forecast period**, enter a **Forecast lead name**,
+   confirm/adjust **Date produced** and **Year**, and leave **Cleanup**
+   checked unless you specifically want to keep prior rows for the same
+   period/year.
 4. Click **Upload**. Progress shows in the progress bar; the result
    (success or the backend's error message) appears as a QGIS message-bar
    notification. On success the shapefile picker is cleared so you can
